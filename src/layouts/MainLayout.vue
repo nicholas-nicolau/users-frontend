@@ -1,18 +1,20 @@
 <template>
   <div class="home">
-    <h1>LISTA DE USUÁRIOS</h1>
+    <h1 data-cy="header-title">LISTA DE USUÁRIOS</h1>
     <header class="d-flex justify-content-between align-items-center">
       <div class="d-flex justify-content-between">
         <select
           id="itemsPerPage"
           @change="pageSize($event)"
           class="form-select form-select-lg m-3"
+          data-cy="register-size-select"
         >
           <option
             v-for="size in pageSizes"
             :key="size"
             :value="size"
             :selected="size == 10"
+            :data-cy="`register-size-option-${size}`"
           >
             {{ size }} <small> registros</small>
           </option>
@@ -23,6 +25,7 @@
           title="Adicionar usuário"
           :disabled="requestFromApi.value"
           @click="showModal()"
+          data-cy="add-new-register-button"
         >
           <i class="fa-solid fa-plus fa-2xl"></i>
         </button>
@@ -35,11 +38,15 @@
           :disabled="disablePageButton()"
           type="button"
           class="btn btn-secondary"
+          data-cy="previous-page-button"
         >
           <i class="fa-solid fa-arrow-left"></i>
         </button>
-        {{ meta?.total_of_pages === 0 ? 0 : Number(meta?.page_number) + 1 }} /
-        {{ meta?.total_of_pages }}
+
+        <span class="m-1" data-cy="pages-info">
+          {{ meta?.total_of_pages === 0 ? 0 : Number(meta?.page_number) + 1 }} /
+          {{ meta?.total_of_pages }}
+        </span>
 
         <button
           title="Pŕoxima página"
@@ -47,6 +54,7 @@
           :disabled="disablePageButton()"
           type="button"
           class="btn btn-secondary"
+          data-cy="next-page-button"
         >
           <i class="fa-solid fa-arrow-right"></i>
         </button>
@@ -58,6 +66,7 @@
           @keyup="searchTerm($event)"
           class="form-control"
           placeholder="Busque por algum termo"
+          data-cy="search-term-input"
         />
       </div>
     </header>
@@ -70,6 +79,7 @@
             :key="index"
             @click="sortTable(header.key)"
             scope="col"
+            :data-cy="`table-header-${header.key}`"
           >
             {{ header.humanize }}
             <div
@@ -78,10 +88,18 @@
               role="link"
             >
               <div v-if="meta?.sort_direction == 'desc'">
-                <i class="fa-solid fa-arrow-up" title="DESC"></i>
+                <i
+                  :data-cy="`sort-arrow-desc-${header.key}`"
+                  class="fa-solid fa-arrow-up"
+                  title="DESC"
+                ></i>
               </div>
               <div v-else>
-                <i class="fa-solid fa-arrow-down" title="ASC"></i>
+                <i
+                  :data-cy="`sort-arrow-asc-${header.key}`"
+                  class="fa-solid fa-arrow-down"
+                  title="ASC"
+                ></i>
               </div>
             </div>
           </th>
@@ -98,6 +116,7 @@
               class="btn btn-primary m-1"
               @click="editUser(user)"
               :disabled="requestFromApi.value"
+              :data-cy="`table-edit-button-${user.id}`"
             >
               Editar
             </button>
@@ -105,6 +124,7 @@
               class="btn btn-danger m-1"
               @click="destroyUser(user.id)"
               :disabled="requestFromApi.value"
+              :data-cy="`table-delete-button-${user.id}`"
             >
               Excluir
             </button>
@@ -112,14 +132,18 @@
         </tr>
       </tbody>
     </table>
-    <footer>{{ footerMessage }}</footer>
-    <span class="d-flex justify-content-center align-items-center">
+    <footer data-cy="footer">{{ footerMessage }}</footer>
+    <span
+      data-cy="request-from-api-footer"
+      class="d-flex justify-content-center align-items-center"
+    >
       <label>Requisitar dados diretamente da API</label>
       <input
         class="checkbox form-check-label m-1"
         type="checkbox"
         v-model="requestFromApi.value"
         @change="fetchUsers(meta || {})"
+        data-cy="request-from-api-input"
     /></span>
     <div class="custom_modal" @click="hideModal()" v-if="isModalOpen">
       <div @click.stop="" class="form_body">
@@ -212,8 +236,11 @@ export default defineComponent({
         .typeError("Você deve inserir um número")
         .required("Idade é obrigatório")
         .integer()
-        .min(0, "Idade deve ser maior do que zero"),
-      email: yup.string().email().required("Email é obrigatório")
+        .min(1, "Idade deve ser maior do que zero"),
+      email: yup
+        .string()
+        .email("Email deve ter um formato válido")
+        .required("Email é obrigatório")
     });
 
     onMounted(async () => {

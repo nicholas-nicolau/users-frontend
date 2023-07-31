@@ -1,0 +1,47 @@
+version: "3"
+services:
+  db:
+    image: "postgres:14-alpine"
+    container_name: cypress-db
+    environment:
+      - RAILS_ENV=development
+      - POSTGRES_PASSWORD=DU0UK6yV1Y4wmElTMLRa
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_HOST=db
+    ports:
+      - "5433:5432"
+  backend:
+    image: users-api-web
+    container_name: cypress-backend
+    command: sh -c "bin/rake db:drop db:create db:migrate db:seed && bin/rails s -b 0.0.0.0"
+    environment:
+      - RAILS_ENV=development
+      - POSTGRES_PASSWORD=DU0UK6yV1Y4wmElTMLRa
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_HOST=db
+    stdin_open: true
+    tty: true
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+  frontend:
+    container_name: cypress-frontend
+    build:
+      context: ../
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ../src:/app/src
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+  cypress:
+    image: cypress/included:12.11.0
+    command: "cypress run"
+    volumes:
+      - ./:/cypress
+    working_dir: /cypress
+    depends_on:
+      - frontend
+    network_mode: "host"
